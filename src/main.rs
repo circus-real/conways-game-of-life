@@ -1,6 +1,5 @@
-use crate::simulation::CellState;
+use crate::simulation::SimulationState;
 use orbclient::{Color, Renderer, Window};
-use rand::Rng;
 use std::{
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -13,21 +12,6 @@ mod simulation;
 
 const FRAME_RATE: u64 = 3;
 const START_ALIVE_PROB: f64 = 0.3;
-
-/// Update the game board based on the rules of Conway's Game of Life
-fn update_board(grid: &mut Vec<Vec<CellState>>) {
-    let rows = grid.len();
-    let cols = grid[0].len();
-    let mut new_grid = vec![vec![CellState::default(); cols]; rows];
-
-    for i in 0..rows {
-        for j in 0..cols {
-            new_grid[i][j] = grid[i][j].next_state(grid, i, j);
-        }
-    }
-
-    *grid = new_grid;
-}
 
 fn main() {
     println!("Starting simulation...");
@@ -42,26 +26,13 @@ fn main() {
         "Conway's Game of Life",
     )
     .expect("Failed to open window");
-
     let (win_w, win_h) = (width / 8, height / 8);
 
-    let mut grid = vec![vec![CellState::default(); win_w as usize]; win_h as usize];
-    let mut rng = rand::thread_rng();
-    grid.iter_mut().for_each(|row| {
-        row.iter_mut().for_each(|cell| {
-            let alive = rng.gen_bool(START_ALIVE_PROB);
-            *cell = if alive {
-                CellState::Alive
-            } else {
-                CellState::Dead
-            };
-        });
-    });
+    let mut grid = SimulationState::new(win_h as usize, win_w as usize, START_ALIVE_PROB);
 
     // Create a flag that will be set to true when a quit signal is received
     let running = Arc::new(AtomicBool::new(true));
     let r = running.clone();
-
     // Register a handler function that will be called when a quit signal is received
     ctrlc::set_handler(move || {
         r.store(false, Ordering::SeqCst);
@@ -87,7 +58,7 @@ fn main() {
         window.clear();
         for i in 0..win_h {
             for j in 0..win_w {
-                let cell_color = grid[i as usize][j as usize].get_color();
+                let cell_color = grid.get_cell(i as usize, j as usize).get_color();
                 if cell_color == Color::rgb(0, 0, 0) {
                     continue;
                 }
@@ -95,7 +66,7 @@ fn main() {
             }
         }
 
-        update_board(&mut grid);
+        grid.update();
 
         window.sync();
     }

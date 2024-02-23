@@ -1,4 +1,5 @@
 use orbclient::Color;
+use rand::Rng;
 
 /// The state of a cell in the game grid
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -58,5 +59,47 @@ impl CellState {
                 }
             }
         }
+    }
+}
+
+/// The simulation state
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct SimulationState {
+    pub grid: Vec<Vec<CellState>>,
+    pub rows: usize,
+    pub cols: usize,
+}
+
+impl SimulationState {
+    /// Create a new simulation state
+    pub fn new(rows: usize, cols: usize, start_alive_prob: f64) -> Self {
+        let mut grid = vec![vec![CellState::default(); cols]; rows];
+        let mut rng = rand::thread_rng();
+        grid.iter_mut().for_each(|row| {
+            row.iter_mut().for_each(|cell| {
+                let alive = rng.gen_bool(start_alive_prob);
+                *cell = if alive {
+                    CellState::Alive
+                } else {
+                    CellState::Dead
+                };
+            });
+        });
+        Self { grid, rows, cols }
+    }
+
+    /// Get the next state of the simulation
+    pub fn update(&mut self) {
+        let prev_grid = self.grid.clone();
+        self.grid.iter_mut().enumerate().for_each(|(i, row)| {
+            row.iter_mut().enumerate().for_each(|(j, cell)| {
+                *cell = cell.next_state(&prev_grid, i, j);
+            });
+        });
+    }
+
+    /// Get the contents of a cell at a given position
+    pub fn get_cell(&self, row: usize, col: usize) -> CellState {
+        self.grid[row][col]
     }
 }
