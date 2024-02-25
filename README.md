@@ -1,12 +1,7 @@
-# falling-sand-sim
+# Conway's Game of Life
 
-A falling sand simulation.
-
-## Features
-- Particle-based simulation
-- Gravity and physics simulation
-- Interactive user interface
-- Customizable particle types
+Basic Game of Life simulation using Rust and `Orbclient`.
 
 ## License
+
 This project is licensed under the [MIT License](./LICENSE).
